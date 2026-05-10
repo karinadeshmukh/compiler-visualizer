@@ -47,33 +47,81 @@ const constantFolding = (expr) => {
     return expr
   }
 }
+// ── Real recursive descent parser ──────────────────────────────────────────
+// Handles: identifiers, integers, floats, +  -  *  /  parentheses
+// Precedence (low to high): additive → multiplicative → unary → primary
 const generateParseTree = (expr) => {
   try {
-    const parts = expr.split("=")
-    if (parts.length < 2) return null
-    const rhs = parts[1].trim()
-    const addMatch = rhs.match(/^(.+)\+(.+)$/)
-    if (addMatch) {
-      const leftPart = addMatch[1].trim()
-      const rightPart = addMatch[2].trim()
-      const mulMatch = rightPart.match(/^(.+)\*(.+)$/)
-      if (mulMatch) {
-        return {
-          value: "+",
-          left: { value: leftPart },
-          right: {
-            value: "*",
-            left: { value: mulMatch[1].trim() },
-            right: {
-              value: mulMatch[2].trim(),
-              left: { value: mulMatch[2].trim().split("")[0] || "?" },
-              right: { value: mulMatch[2].trim().split("")[1] || "?" },
-            },
-          },
-        }
-      }
+    const eqIdx = expr.indexOf("=")
+    if (eqIdx === -1) return null
+    const lhs = expr.slice(0, eqIdx).trim()
+    const rhs = expr.slice(eqIdx + 1).trim()
+
+    // Tokeniser
+    const toks = []
+    let i = 0
+    while (i < rhs.length) {
+      if (/\s/.test(rhs[i])) { i++; continue }
+      if (/[0-9]/.test(rhs[i])) {
+        let num = ""
+        while (i < rhs.length && /[0-9.]/.test(rhs[i])) num += rhs[i++]
+        toks.push({ type: "NUM", val: num })
+      } else if (/[a-zA-Z_]/.test(rhs[i])) {
+        let id = ""
+        while (i < rhs.length && /\w/.test(rhs[i])) id += rhs[i++]
+        toks.push({ type: "ID", val: id })
+      } else if (["+", "-", "*", "/", "(", ")"].includes(rhs[i])) {
+        toks.push({ type: rhs[i], val: rhs[i] }); i++
+      } else { i++ }
     }
-    return null
+
+    let pos = 0
+    const peek    = ()  => toks[pos]
+    const consume = ()  => toks[pos++]
+    const expect  = (t) => { if (peek()?.type === t) consume() }
+
+    function parseExpr() { return parseAdditive() }
+
+    function parseAdditive() {
+      let node = parseMultiplicative()
+      while (peek()?.type === "+" || peek()?.type === "-") {
+        const op = consume().val
+        node = { value: op, left: node, right: parseMultiplicative() }
+      }
+      return node
+    }
+
+    function parseMultiplicative() {
+      let node = parseUnary()
+      while (peek()?.type === "*" || peek()?.type === "/") {
+        const op = consume().val
+        node = { value: op, left: node, right: parseUnary() }
+      }
+      return node
+    }
+
+    function parseUnary() {
+      if (peek()?.type === "-") {
+        consume()
+        return { value: "-", left: null, right: parseUnary() }
+      }
+      return parsePrimary()
+    }
+
+    function parsePrimary() {
+      const t = peek()
+      if (!t) return { value: "?" }
+      if (t.type === "NUM" || t.type === "ID") { consume(); return { value: t.val } }
+      if (t.type === "(") {
+        consume()
+        const node = parseExpr()
+        expect(")")
+        return node
+      }
+      return { value: "?" }
+    }
+
+    return { value: "=", left: { value: lhs }, right: parseExpr() }
   } catch {
     return null
   }
@@ -222,71 +270,86 @@ function TACRow({ line, index }) {
   )
 }
 
-// ── SVG Parse Tree ──────────────────────────────────────────────────────────
-// Renders the tree entirely in SVG so branch lines are pixel-perfect.
-// Layout is computed once from fixed coordinates; all lines are drawn first
-// (under the nodes) so circles always appear on top.
-
-const NODE_R = 22          // radius of a node circle
-const SMALL_R = 18         // radius for deeper nodes
-
-// Palette: one colour per tree depth level
-const NODE_STYLES = [
-  { stroke: "#34d399", text: "#6ee7b7" },   // depth 0 — emerald  (root)
-  { stroke: "#38bdf8", text: "#7dd3fc" },   // depth 1 — sky
-  { stroke: "#fb7185", text: "#fda4af" },   // depth 1 — rose
-  { stroke: "#fbbf24", text: "#fde68a" },   // depth 2 — amber
-  { stroke: "#a78bfa", text: "#c4b5fd" },   // depth 2 — violet
-  { stroke: "#94a3b8", text: "#cbd5e1" },   // depth 3 — slate
-  { stroke: "#94a3b8", text: "#cbd5e1" },   // depth 3 — slate
-]
-
-// Fixed node positions [cx, cy] and their style index
-// Tree shape for "a = 5 + 3 * 2":
+// ── Dynamic SVG Parse Tree ───────────────────────────────────────────────────
+// Fully recursive layout: works for any expression, any tree shape.
 //
-//              [+]  (0)
-//             /    \
-//           [5]    [*]  (1,2)
-//                  / \
-//                [3] [2]  (3,4)
-//                    / \
-//                  [3] [2]  (5,6)  ← from right.right subtree leaves
-//
-// We lay this out on a 380×280 canvas (cx relative to centre = 190).
+// Step 1 — measureSubtree : count leaf-slots needed under each subtree node.
+// Step 2 — assignPositions: walk the tree, proportionally split the horizontal
+//           slot between left/right children, place each node at slot-centre.
+// Step 3 — Render SVG     : draw bezier branches first, then circles on top.
 
-const NODES = [
-  { id: 0, cx: 190, cy: 34,  r: NODE_R,  styleIdx: 0, key: "root"      },
-  { id: 1, cx:  70, cy: 110, r: NODE_R,  styleIdx: 1, key: "left"      },
-  { id: 2, cx: 295, cy: 110, r: NODE_R,  styleIdx: 2, key: "right"     },
-  { id: 3, cx: 210, cy: 186, r: SMALL_R, styleIdx: 3, key: "right.left"      },
-  { id: 4, cx: 360, cy: 186, r: SMALL_R, styleIdx: 4, key: "right.right"     },
-  { id: 5, cx: 300, cy: 260, r: SMALL_R, styleIdx: 5, key: "right.right.left"  },
-  { id: 6, cx: 410, cy: 260, r: SMALL_R, styleIdx: 6, key: "right.right.right" },
+const DEPTH_COLORS = [
+  { stroke: "#34d399", text: "#6ee7b7" }, // depth 0 — emerald (root / "=")
+  { stroke: "#38bdf8", text: "#7dd3fc" }, // depth 1 left  — sky
+  { stroke: "#fb7185", text: "#fda4af" }, // depth 1 right — rose
+  { stroke: "#fbbf24", text: "#fde68a" }, // depth 2 left  — amber
+  { stroke: "#a78bfa", text: "#c4b5fd" }, // depth 2 right — violet
+  { stroke: "#94a3b8", text: "#cbd5e1" }, // depth 3+      — slate
 ]
 
-// Edges: [parentId, childId]
-const EDGES = [
-  [0, 1], [0, 2],
-  [2, 3], [2, 4],
-  [4, 5], [4, 6],
-]
+function treeColor(depth, isRight) {
+  if (depth === 0) return DEPTH_COLORS[0]
+  if (depth === 1) return isRight ? DEPTH_COLORS[2] : DEPTH_COLORS[1]
+  if (depth === 2) return isRight ? DEPTH_COLORS[4] : DEPTH_COLORS[3]
+  return DEPTH_COLORS[5]
+}
 
-// Resolve a dot-path like "right.left.value" from the tree object
-function resolvePath(tree, path) {
-  return path.split(".").reduce((node, key) => node?.[key], tree) ?? "?"
+// Count minimum leaf-slots this subtree occupies (width unit).
+function measureSubtree(node) {
+  if (!node) return 0
+  const l = measureSubtree(node.left)
+  const r = measureSubtree(node.right)
+  if (l === 0 && r === 0) return 1   // leaf → 1 slot
+  return l + r
+}
+
+// Populate `nodes` and `edges` arrays with layout info via DFS.
+// slotX / slotW define the horizontal band assigned to this subtree.
+function layoutTree(node, slotX, slotW, cy, depth, isRight, nodes, edges) {
+  if (!node) return
+  const cx   = slotX + slotW / 2
+  const id   = nodes.length
+  nodes.push({ id, cx, cy, value: node.value, depth, isRight })
+
+  const LEVEL_H = 78   // vertical gap between depth levels (px)
+
+  if (node.left || node.right) {
+    const lSlots = measureSubtree(node.left)  || (node.right ? 0 : 1)
+    const rSlots = measureSubtree(node.right) || (node.left  ? 0 : 1)
+    const total  = lSlots + rSlots
+
+    if (node.left) {
+      const childId = nodes.length
+      edges.push([id, childId])
+      const lW = slotW * (lSlots / total)
+      layoutTree(node.left,  slotX,      lW, cy + LEVEL_H, depth + 1, false, nodes, edges)
+    }
+    if (node.right) {
+      const lW     = slotW * (lSlots / total)
+      const childId = nodes.length
+      edges.push([id, childId])
+      layoutTree(node.right, slotX + lW, slotW * (rSlots / total), cy + LEVEL_H, depth + 1, true, nodes, edges)
+    }
+  }
 }
 
 function ParseTree({ tree }) {
   if (!tree) return null
 
-  // Map each node key to the actual value from the tree
-  const getValue = (key) => {
-    if (key === "root") return tree.value
-    return resolvePath(tree, key + ".value")
-  }
+  const SVG_W = 480
+  const H_PAD = 32      // horizontal padding either side
+  const TOP_Y = 38      // cy of root node
 
-  const SVG_W = 470
-  const SVG_H = 300
+  const nodes = []
+  const edges = []
+  layoutTree(tree, H_PAD, SVG_W - H_PAD * 2, TOP_Y, 0, false, nodes, edges)
+
+  // SVG height: deepest node bottom edge + bottom padding
+  const maxCY = Math.max(...nodes.map(n => n.cy))
+  const SVG_H = maxCY + 46
+
+  // Node radius shrinks with depth so deep trees remain readable
+  const nodeR = (depth) => Math.max(14, 22 - depth * 2)
 
   return (
     <motion.div
@@ -298,65 +361,54 @@ function ParseTree({ tree }) {
       <svg
         viewBox={`0 0 ${SVG_W} ${SVG_H}`}
         width="100%"
-        style={{ minWidth: 320, maxWidth: SVG_W, display: "block", margin: "0 auto" }}
+        style={{ minWidth: 260, maxWidth: SVG_W, display: "block", margin: "0 auto" }}
         aria-label="Parse tree diagram"
       >
-        {/* ── Branch lines (drawn FIRST, underneath nodes) ── */}
-        {EDGES.map(([pId, cId]) => {
-          const p = NODES[pId]
-          const c = NODES[cId]
-          // Line runs from bottom of parent circle to top of child circle
+        {/* ── Branch bezier curves — rendered BEFORE nodes so circles sit on top ── */}
+        {edges.map(([pId, cId]) => {
+          const p  = nodes[pId]
+          const c  = nodes[cId]
+          const pr = nodeR(p.depth)
+          const cr = nodeR(c.depth)
+          // Quadratic bezier: control point drops ~20px below parent bottom edge
+          const ctrlX = (p.cx + c.cx) / 2
+          const ctrlY = p.cy + pr + 20
           return (
-            <line
-              key={`${pId}-${cId}`}
-              x1={p.cx}
-              y1={p.cy + p.r}
-              x2={c.cx}
-              y2={c.cy - c.r}
-              stroke="rgba(255,255,255,0.15)"
+            <path
+              key={`e-${pId}-${cId}`}
+              d={`M ${p.cx} ${p.cy + pr} Q ${ctrlX} ${ctrlY} ${c.cx} ${c.cy - cr}`}
+              fill="none"
+              stroke="rgba(255,255,255,0.18)"
               strokeWidth="1.5"
               strokeLinecap="round"
             />
           )
         })}
 
-        {/* ── Node circles + labels (drawn ON TOP of lines) ── */}
-        {NODES.map((node) => {
-          const style = NODE_STYLES[node.styleIdx]
-          const val = getValue(node.key)
+        {/* ── Node circles + glow ring + label — rendered ON TOP of branches ── */}
+        {nodes.map((node) => {
+          const r      = nodeR(node.depth)
+          const style  = treeColor(node.depth, node.isRight)
+          const label  = String(node.value ?? "?")
+          // Truncate long identifiers to 4 chars so they fit inside the circle
+          const display = label.length > 4 ? label.slice(0, 4) : label
+          const fs     = r >= 20 ? 13 : r >= 16 ? 11 : 10
           return (
-            <g key={node.id}>
-              {/* Glow ring */}
-              <circle
-                cx={node.cx}
-                cy={node.cy}
-                r={node.r + 4}
-                fill="none"
-                stroke={style.stroke}
-                strokeWidth="1"
-                opacity="0.18"
-              />
+            <g key={`n-${node.id}`}>
+              {/* Outer glow ring */}
+              <circle cx={node.cx} cy={node.cy} r={r + 5}
+                fill="none" stroke={style.stroke} strokeWidth="1" opacity="0.15" />
               {/* Main circle */}
-              <circle
-                cx={node.cx}
-                cy={node.cy}
-                r={node.r}
-                fill="#0d1117"
-                stroke={style.stroke}
-                strokeWidth="2"
-              />
-              {/* Value label */}
+              <circle cx={node.cx} cy={node.cy} r={r}
+                fill="#0d1117" stroke={style.stroke} strokeWidth="2" />
+              {/* Value text */}
               <text
-                x={node.cx}
-                y={node.cy}
-                textAnchor="middle"
-                dominantBaseline="central"
-                fill={style.text}
-                fontSize={node.r >= NODE_R ? "13" : "11"}
+                x={node.cx} y={node.cy}
+                textAnchor="middle" dominantBaseline="central"
+                fill={style.text} fontSize={fs} fontWeight="600"
                 fontFamily="'DM Mono', ui-monospace, monospace"
-                fontWeight="600"
               >
-                {String(val).length > 3 ? String(val).slice(0, 3) : val}
+                {display}
               </text>
             </g>
           )
