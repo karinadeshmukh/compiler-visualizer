@@ -16,6 +16,81 @@ function App() {
   const [tree, setTree] = useState(null)
   const [loading, setLoading] = useState(false)
   const [activePhase, setActivePhase] = useState(null)
+  const [selectedTheory, setSelectedTheory] = useState(null)
+
+  const theorySections = [
+
+    {
+      title: "Introduction to Compiler",
+      icon: "💻",
+      content:
+        "A compiler converts high-level programming language into machine-level code through multiple phases."
+    },
+
+    {
+      title: "Phases of Compiler",
+      icon: "⚡",
+      content:
+        "Compiler phases include lexical analysis, syntax analysis, intermediate code generation, optimization and code generation."
+    },
+
+    {
+      title: "Lexical Analysis",
+      icon: "🧠",
+      content:
+        "Lexical analysis converts source code into tokens such as identifiers, operators and constants."
+    },
+
+    {
+      title: "Syntax Analysis",
+      icon: "🌳",
+      content:
+        "Syntax analysis checks whether the expression follows proper grammar and valid syntax rules."
+    },
+
+    {
+      title: "Arithmetic Expression Evaluation",
+      icon: "➗",
+      content:
+        "Arithmetic expressions are evaluated using operator precedence and associativity rules."
+    },
+
+    {
+      title: "Three Address Code",
+      icon: "⚙️",
+      content:
+        "Three Address Code is an intermediate representation where instructions contain at most three addresses."
+    },
+
+    {
+      title: "Constant Folding",
+      icon: "🚀",
+      content:
+        "Constant folding simplifies constant expressions during compilation to improve efficiency."
+    },
+
+    {
+      title: "Error Handling",
+      icon: "❌",
+      content:
+        "Compiler detects invalid expressions and syntax errors to prevent incorrect execution."
+    },
+
+    {
+      title: "Applications",
+      icon: "📚",
+      content:
+        "Compiler concepts are used in IDEs, interpreters, optimization systems and programming languages."
+    },
+
+    {
+      title: "Future Scope",
+      icon: "🔮",
+      content:
+        "Future enhancements include semantic analysis, SVG parse trees and AI-based optimization."
+    }
+
+  ]
 
   const handleEvaluate = () => {
 
@@ -60,27 +135,27 @@ function App() {
 
     <div className="min-h-screen overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 text-white px-10 py-16 relative">
 
-      {/* Animated Glow Effects */}
+      {/* Animated Blobs */}
 
       <motion.div
         animate={{
-          y: [0, -40, 0],
-          x: [0, 30, 0]
+          x: [0, 100, 0],
+          y: [0, -50, 0]
         }}
         transition={{
-          duration: 8,
+          duration: 12,
           repeat: Infinity
         }}
-        className="absolute top-0 left-0 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-3xl"
+        className="absolute top-10 left-10 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-3xl"
       />
 
       <motion.div
         animate={{
-          y: [0, 50, 0],
-          x: [0, -30, 0]
+          x: [0, -120, 0],
+          y: [0, 60, 0]
         }}
         transition={{
-          duration: 10,
+          duration: 15,
           repeat: Infinity
         }}
         className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-3xl"
@@ -88,158 +163,207 @@ function App() {
 
       <motion.div
         animate={{
-          y: [0, -30, 0],
-          x: [0, 25, 0]
+          y: [0, -80, 0]
         }}
         transition={{
-          duration: 12,
+          duration: 10,
           repeat: Infinity
         }}
-        className="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-pink-500/10 rounded-full blur-3xl"
+        className="absolute top-[40%] left-[40%] w-[300px] h-[300px] bg-pink-500/10 rounded-full blur-3xl"
       />
 
-      {/* Heading */}
+      {/* HERO */}
 
       <motion.h1
-        initial={{ opacity: 0, y: -40 }}
+        initial={{ opacity: 0, y: -60 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="text-6xl md:text-7xl font-extrabold text-center mb-6 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent"
+        transition={{ duration: 1 }}
+        className="text-7xl font-extrabold text-center mb-6 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent"
       >
         Compiler Visualizer
       </motion.h1>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-        className="text-center text-cyan-400 text-2xl mb-10"
-      >
-        Interactive Compiler Design Simulator
-      </motion.div>
-
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-        className="text-center text-slate-300 text-xl mb-16 max-w-5xl mx-auto leading-9"
+        transition={{ duration: 1.2 }}
+        className="text-center text-slate-300 text-xl mb-20 max-w-5xl mx-auto leading-9"
       >
-        Design and implementation of an Arithmetic Expression Evaluator
-        using compiler phases including lexical analysis, TAC generation,
-        optimization, and parse tree visualization.
+        Interactive visualization of compiler phases including lexical analysis,
+        syntax analysis, TAC generation, optimization and parse tree generation.
       </motion.p>
 
-      {/* Compiler Pipeline */}
+      {/* COMPILER PHASES */}
 
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.2 }}
-        className="flex flex-col items-center gap-6 mb-16"
+        initial={{ opacity: 0, y: 80 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1 }}
+        viewport={{ once: true }}
+        className="flex flex-wrap justify-center gap-6 mb-20"
       >
 
-        <div className="flex flex-wrap justify-center gap-6">
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setActivePhase(activePhase === 0 ? null : 0)}
-            className="px-6 py-3 rounded-full backdrop-blur-lg border border-cyan-400 bg-cyan-500/10 text-lg font-semibold"
-          >
-            1️⃣ Lexical Analysis
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setActivePhase(activePhase === 1 ? null : 1)}
-            className="px-6 py-3 rounded-full backdrop-blur-lg border border-purple-400 bg-purple-500/10 text-lg font-semibold"
-          >
-            2️⃣ Syntax Analysis
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setActivePhase(activePhase === 2 ? null : 2)}
-            className="px-6 py-3 rounded-full backdrop-blur-lg border border-yellow-400 bg-yellow-500/10 text-lg font-semibold"
-          >
-            3️⃣ TAC Generation
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setActivePhase(activePhase === 3 ? null : 3)}
-            className="px-6 py-3 rounded-full backdrop-blur-lg border border-green-400 bg-green-500/10 text-lg font-semibold"
-          >
-            4️⃣ Optimization
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setActivePhase(activePhase === 4 ? null : 4)}
-            className="px-6 py-3 rounded-full backdrop-blur-lg border border-pink-400 bg-pink-500/10 text-lg font-semibold"
-          >
-            5️⃣ Parse Tree
-          </motion.button>
-
-        </div>
-
-        {/* Definition Box */}
-
         {
-          activePhase !== null && (
 
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="max-w-4xl bg-slate-900/80 border border-slate-700 rounded-3xl p-6 text-slate-300 text-lg leading-8 shadow-2xl"
+          [
+            "Lexical Analysis",
+            "Syntax Analysis",
+            "TAC Generation",
+            "Optimization",
+            "Parse Tree"
+          ].map((phase, index) => (
+
+            <motion.button
+              key={index}
+              whileHover={{
+                scale: 1.08,
+                y: -8,
+                boxShadow: "0px 0px 40px rgba(34,211,238,0.35)"
+              }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() =>
+                setActivePhase(
+                  activePhase === index ? null : index
+                )
+              }
+              className="px-8 py-4 rounded-full backdrop-blur-lg border border-cyan-400/30 bg-white/5 text-lg font-semibold"
             >
+              {phase}
+            </motion.button>
 
-              {
-                activePhase === 0 &&
-                "Breaks the input expression into tokens such as identifiers, operators, constants, and symbols."
-              }
+          ))
 
-              {
-                activePhase === 1 &&
-                "Checks whether the arithmetic expression follows valid grammar and syntax rules."
-              }
-
-              {
-                activePhase === 2 &&
-                "Converts the arithmetic expression into intermediate Three Address Code representation."
-              }
-
-              {
-                activePhase === 3 &&
-                "Applies constant folding optimization to simplify arithmetic expressions and improve efficiency."
-              }
-
-              {
-                activePhase === 4 &&
-                "Creates a hierarchical tree structure representing the arithmetic expression."
-              }
-
-            </motion.div>
-
-          )
         }
 
       </motion.div>
 
-      {/* Main Card */}
+      {/* ACTIVE PHASE INFO */}
+
+      {
+
+        activePhase !== null && (
+
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-4xl mx-auto bg-slate-900/70 border border-slate-700 rounded-3xl p-8 mb-20 text-slate-300 text-lg leading-9"
+          >
+
+            {
+              activePhase === 0 &&
+              "Lexical Analysis converts source code into tokens such as identifiers, operators and constants."
+            }
+
+            {
+              activePhase === 1 &&
+              "Syntax Analysis validates the grammar structure of arithmetic expressions."
+            }
+
+            {
+              activePhase === 2 &&
+              "Three Address Code simplifies arithmetic expressions into intermediate instructions."
+            }
+
+            {
+              activePhase === 3 &&
+              "Optimization improves efficiency using techniques such as constant folding."
+            }
+
+            {
+              activePhase === 4 &&
+              "Parse Tree visually represents the hierarchical structure of expressions."
+            }
+
+          </motion.div>
+
+        )
+
+      }
+
+      {/* THEORY */}
 
       <motion.div
-        initial={{ opacity: 0, y: 60 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, ease: "easeOut" }}
-        className="relative z-10 max-w-[1700px] mx-auto bg-white/5 backdrop-blur-2xl border border-cyan-400/10 rounded-[40px] shadow-[0_0_50px_rgba(34,211,238,0.18)] p-14"
+        initial={{ opacity: 0, y: 80 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1 }}
+        viewport={{ once: true }}
+        className="mb-24"
       >
 
-        {/* Input */}
+        <h2 className="text-5xl font-bold text-center mb-16 text-cyan-400">
+          📘 Compiler Theory
+        </h2>
+
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-10">
+
+          {
+
+            theorySections.map((section, index) => (
+
+              <motion.div
+                key={index}
+                whileHover={{
+                  scale: 1.04,
+                  y: -10,
+                  boxShadow: "0px 0px 40px rgba(34,211,238,0.25)"
+                }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() =>
+                  setSelectedTheory(
+                    selectedTheory === index ? null : index
+                  )
+                }
+                className="cursor-pointer bg-white/5 backdrop-blur-xl border border-cyan-400/10 rounded-3xl p-8 hover:border-cyan-400 transition-all duration-500"
+              >
+
+                <div className="text-5xl mb-6">
+                  {section.icon}
+                </div>
+
+                <h3 className="text-2xl font-bold mb-4">
+                  {section.title}
+                </h3>
+
+                <p className="text-slate-400">
+                  Click to explore theory
+                </p>
+
+                {
+
+                  selectedTheory === index && (
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-6 text-slate-300 leading-8"
+                    >
+                      {section.content}
+                    </motion.div>
+
+                  )
+
+                }
+
+              </motion.div>
+
+            ))
+
+          }
+
+        </div>
+
+      </motion.div>
+
+      {/* MAIN PANEL */}
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92, y: 80 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 1 }}
+        className="relative z-10 max-w-[1900px] mx-auto bg-white/5 backdrop-blur-2xl border border-cyan-400/10 rounded-[40px] shadow-[0_0_50px_rgba(34,211,238,0.18)] p-14"
+      >
+
+        {/* INPUT */}
 
         <div className="flex flex-col lg:flex-row gap-6">
 
@@ -252,53 +376,53 @@ function App() {
           />
 
           <motion.button
-            whileHover={{ scale: 1.05 }}
+            whileHover={{
+              scale: 1.05,
+              boxShadow: "0px 0px 40px rgba(34,211,238,0.6)"
+            }}
             whileTap={{ scale: 0.95 }}
             onClick={handleEvaluate}
-            className="px-12 py-6 rounded-3xl bg-gradient-to-r from-cyan-500 to-blue-500 font-bold text-lg shadow-lg hover:shadow-[0_0_25px_rgba(34,211,238,0.6)] transition-all duration-300"
+            className="px-12 py-6 rounded-3xl bg-gradient-to-r from-cyan-500 to-blue-500 font-bold text-lg shadow-[0_0_30px_rgba(34,211,238,0.5)] transition-all duration-500"
           >
             {loading ? "Compiling..." : "Evaluate"}
           </motion.button>
 
         </div>
 
-        {/* Sample Expressions */}
+        {/* SAMPLE BUTTONS */}
 
-        <div className="flex flex-wrap gap-4 mt-6">
+        <div className="flex flex-wrap gap-4 mt-8">
 
-          <button
-            onClick={() => setExpression("a = 5 + 3 * 2")}
-            className="px-5 py-3 bg-slate-700/80 border border-slate-600 rounded-2xl hover:bg-slate-600 transition-all duration-300"
-          >
-            a = 5 + 3 * 2
-          </button>
+          {
 
-          <button
-            onClick={() => setExpression("x = 10 - 4 / 2")}
-            className="px-5 py-3 bg-slate-700/80 border border-slate-600 rounded-2xl hover:bg-slate-600 transition-all duration-300"
-          >
-            x = 10 - 4 / 2
-          </button>
+            [
+              "a = 5 + 3 * 2",
+              "x = 10 - 4 / 2",
+              "y = 8 * 2 + 1"
+            ].map((sample, index) => (
 
-          <button
-            onClick={() => setExpression("y = 8 * 2 + 1")}
-            className="px-5 py-3 bg-slate-700/80 border border-slate-600 rounded-2xl hover:bg-slate-600 transition-all duration-300"
-          >
-            y = 8 * 2 + 1
-          </button>
+              <motion.button
+                key={index}
+                whileHover={{ scale: 1.05 }}
+                onClick={() => setExpression(sample)}
+                className="px-5 py-3 bg-slate-700/80 border border-slate-600 rounded-2xl hover:bg-slate-600 transition-all duration-300"
+              >
+                {sample}
+              </motion.button>
+
+            ))
+
+          }
 
         </div>
 
-        {/* Loader */}
+        {/* LOADER */}
 
         {
+
           loading && (
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex justify-center mt-10"
-            >
+            <div className="flex justify-center mt-12">
 
               <motion.div
                 animate={{ rotate: 360 }}
@@ -310,33 +434,34 @@ function App() {
                 className="w-20 h-20 border-[6px] border-cyan-400 border-t-transparent rounded-full"
               />
 
-            </motion.div>
+            </div>
+
           )
+
         }
 
-        {/* Error */}
+        {/* ERROR */}
 
         {
+
           error && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mt-8 bg-red-500/20 border border-red-500 p-6 rounded-3xl text-lg"
-            >
+
+            <div className="mt-10 bg-red-500/20 border border-red-500 p-6 rounded-3xl text-lg">
               {error}
-            </motion.div>
+            </div>
+
           )
+
         }
 
-        {/* Sections Grid */}
+        {/* OUTPUTS */}
 
-        <div className="grid xl:grid-cols-2 gap-12 mt-14">
+        <div className="grid xl:grid-cols-2 gap-12 mt-16">
 
-          {/* Tokens */}
+          {/* TOKENS */}
 
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ y: -5 }}
             className="bg-slate-900/40 border border-slate-700 rounded-[35px] p-8"
           >
 
@@ -346,20 +471,24 @@ function App() {
 
             <div className="space-y-4">
 
-              {tokens.map((token, index) => (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{
-                    delay: index * 0.1
-                  }}
-                  key={index}
-                  className="bg-slate-800/80 p-5 rounded-2xl flex justify-between border border-slate-600 text-lg"
-                >
-                  <span>{token.value}</span>
-                  <span className="text-cyan-300">{token.type}</span>
-                </motion.div>
-              ))}
+              {
+
+                tokens.map((token, index) => (
+
+                  <motion.div
+                    key={index}
+                    whileHover={{ scale: 1.02 }}
+                    className="bg-slate-800/80 p-5 rounded-2xl flex justify-between border border-slate-600 text-lg"
+                  >
+                    <span>{token.value}</span>
+                    <span className="text-cyan-300">
+                      {token.type}
+                    </span>
+                  </motion.div>
+
+                ))
+
+              }
 
             </div>
 
@@ -368,8 +497,7 @@ function App() {
           {/* TAC */}
 
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ y: -5 }}
             className="bg-slate-900/40 border border-slate-700 rounded-[35px] p-8"
           >
 
@@ -379,32 +507,30 @@ function App() {
 
             <div className="space-y-4">
 
-              {tac.map((line, index) => (
+              {
 
-                <motion.div
-                  initial={{ opacity: 0, x: -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{
-                    delay: index * 0.4,
-                    duration: 0.5
-                  }}
-                  key={index}
-                  className="bg-slate-800/80 p-5 rounded-2xl border border-slate-600 font-mono text-lg"
-                >
-                  {line}
-                </motion.div>
+                tac.map((line, index) => (
 
-              ))}
+                  <motion.div
+                    key={index}
+                    whileHover={{ scale: 1.02 }}
+                    className="bg-slate-800/80 p-5 rounded-2xl border border-slate-600 font-mono text-lg"
+                  >
+                    {line}
+                  </motion.div>
+
+                ))
+
+              }
 
             </div>
 
           </motion.div>
 
-          {/* Optimization */}
+          {/* OPTIMIZATION */}
 
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ y: -5 }}
             className="bg-slate-900/40 border border-slate-700 rounded-[35px] p-8"
           >
 
@@ -413,7 +539,7 @@ function App() {
             </h2>
 
             <motion.div
-              whileHover={{ scale: 1.03 }}
+              whileHover={{ scale: 1.02 }}
               className="bg-green-500/20 border border-green-500 p-7 rounded-3xl text-2xl font-semibold"
             >
               {optimizedCode}
@@ -421,63 +547,92 @@ function App() {
 
           </motion.div>
 
-          {/* Parse Tree */}
+          {/* PARSE TREE */}
 
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-slate-900/40 border border-slate-700 rounded-[35px] p-8"
+            whileHover={{ y: -5 }}
+            className="bg-slate-900/40 border border-slate-700 rounded-[35px] p-8 overflow-x-auto"
           >
 
-            <h2 className="text-3xl font-bold mb-7 text-pink-400">
+            <h2 className="text-3xl font-bold mb-10 text-pink-400">
               🌳 Parse Tree
             </h2>
 
             {
+
               tree && (
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  className="bg-slate-800/80 border border-slate-600 rounded-3xl p-10 text-center leading-[60px] text-xl"
-                >
 
-                  <div className="text-cyan-400 text-4xl font-bold">
-                    {tree.value}
-                  </div>
+                <div className="flex justify-center min-w-[500px]">
 
-                  <div className="flex justify-center gap-32 mt-6">
+                  <div className="flex flex-col items-center">
 
-                    <div className="text-2xl">
-                      {tree.left.value}
-                    </div>
+                    <motion.div
+                      whileHover={{ scale: 1.08 }}
+                      className="w-16 h-16 rounded-full border-4 border-cyan-400 flex items-center justify-center text-2xl font-bold bg-slate-800"
+                    >
+                      {tree.value}
+                    </motion.div>
 
-                    <div>
+                    <div className="h-10 w-[2px] bg-cyan-400"></div>
 
-                      <div className="text-2xl">
-                        {tree.right.value}
-                      </div>
+                    <div className="flex items-start gap-32">
 
-                      <div className="flex justify-center gap-24 mt-6">
+                      <motion.div
+                        whileHover={{ scale: 1.08 }}
+                        className="w-14 h-14 rounded-full border-4 border-purple-400 flex items-center justify-center text-2xl font-bold bg-slate-800"
+                      >
+                        {tree.left.value}
+                      </motion.div>
 
-                        <div className="text-xl">
-                          {tree.right.left.value}
-                        </div>
+                      <div className="flex flex-col items-center">
 
-                        <div>
+                        <motion.div
+                          whileHover={{ scale: 1.08 }}
+                          className="w-14 h-14 rounded-full border-4 border-pink-400 flex items-center justify-center text-2xl font-bold bg-slate-800"
+                        >
+                          {tree.right.value}
+                        </motion.div>
 
-                          <div className="text-xl">
-                            {tree.right.right.value}
-                          </div>
+                        <div className="h-10 w-[2px] bg-cyan-400"></div>
 
-                          <div className="flex justify-center gap-16 mt-6">
+                        <div className="flex items-start gap-24">
 
-                            <div className="text-lg">
-                              {tree.right.right.left.value}
+                          <motion.div
+                            whileHover={{ scale: 1.08 }}
+                            className="w-12 h-12 rounded-full border-4 border-yellow-400 flex items-center justify-center text-xl font-bold bg-slate-800"
+                          >
+                            {tree.right.left.value}
+                          </motion.div>
+
+                          <div className="flex flex-col items-center">
+
+                            <motion.div
+                              whileHover={{ scale: 1.08 }}
+                              className="w-12 h-12 rounded-full border-4 border-green-400 flex items-center justify-center text-xl font-bold bg-slate-800"
+                            >
+                              {tree.right.right.value}
+                            </motion.div>
+
+                            <div className="h-10 w-[2px] bg-cyan-400"></div>
+
+                            <div className="flex gap-16">
+
+                              <motion.div
+                                whileHover={{ scale: 1.08 }}
+                                className="w-10 h-10 rounded-full border-4 border-slate-400 flex items-center justify-center text-lg font-bold bg-slate-800"
+                              >
+                                {tree.right.right.left.value}
+                              </motion.div>
+
+                              <motion.div
+                                whileHover={{ scale: 1.08 }}
+                                className="w-10 h-10 rounded-full border-4 border-slate-400 flex items-center justify-center text-lg font-bold bg-slate-800"
+                              >
+                                {tree.right.right.right.value}
+                              </motion.div>
+
                             </div>
 
-                            <div className="text-lg">
-                              {tree.right.right.right.value}
-                            </div>
-
                           </div>
 
                         </div>
@@ -488,8 +643,10 @@ function App() {
 
                   </div>
 
-                </motion.div>
+                </div>
+
               )
+
             }
 
           </motion.div>
@@ -498,16 +655,11 @@ function App() {
 
       </motion.div>
 
-      {/* Footer */}
+      {/* FOOTER */}
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.5 }}
-        className="text-center text-slate-400 mt-16 text-lg"
-      >
+      <div className="text-center text-slate-400 mt-16 text-lg">
         Built using React, Tailwind CSS, Framer Motion & Compiler Design Concepts 🚀
-      </motion.div>
+      </div>
 
     </div>
   )
