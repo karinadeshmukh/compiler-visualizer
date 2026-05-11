@@ -14,7 +14,74 @@ const lexer = (expr) => {
   })
   return tokens
 }
-const validateSyntax = (expr) => /^[a-zA-Z_]\w*\s*=\s*.+/.test(expr.trim())
+// ── Rich syntax validator — returns [] on success, [{code,message,hint}] on error ──
+function validateSyntax(expr) {
+  const errs = []
+  const raw  = expr.trim()
+
+  if (!raw)
+    return [{ code: "E01", message: "Empty input", hint: "Enter an expression such as  a = 5 + 3 * 2" }]
+
+  if (!raw.includes("="))
+    return [{ code: "E02", message: "Missing assignment operator '='", hint: "Expressions must have the form  variable = expression" }]
+
+  const eqCount = (raw.match(/=/g) || []).length
+  if (eqCount > 1)
+    errs.push({ code: "E03", message: "Multiple '=' operators found", hint: "Only one assignment is allowed per expression" })
+
+  const eqIdx = raw.indexOf("=")
+  const lhs   = raw.slice(0, eqIdx).trim()
+  const rhs   = raw.slice(eqIdx + 1).trim()
+
+  if (!/^[a-zA-Z_]\w*$/.test(lhs)) {
+    if (!lhs)
+      errs.push({ code: "E04", message: "Missing variable name on the left of '='", hint: "Must start with a letter or underscore (e.g. result, x, total)" })
+    else if (/^[0-9]/.test(lhs))
+      errs.push({ code: "E04", message: `Left-hand side '${lhs}' starts with a digit`, hint: "Variable names cannot begin with a number" })
+    else
+      errs.push({ code: "E04", message: `'${lhs}' is not a valid variable name`, hint: "Use only letters, digits, and underscores — no spaces or special characters" })
+  }
+
+  if (!rhs) {
+    errs.push({ code: "E05", message: "Missing expression on the right of '='", hint: "Provide an arithmetic expression such as  5 + 3 * 2" })
+    return errs
+  }
+
+  // Unbalanced parentheses
+  let depth = 0
+  let firstBad = -1
+  for (let i = 0; i < rhs.length; i++) {
+    if (rhs[i] === "(") depth++
+    else if (rhs[i] === ")") { depth--; if (depth < 0 && firstBad === -1) firstBad = i }
+  }
+  if (depth > 0)
+    errs.push({ code: "E06", message: `Unclosed parenthesis — missing ${depth} closing ')'`, hint: "Every '(' must be matched by a ')'", col: null })
+  else if (firstBad !== -1)
+    errs.push({ code: "E06", message: `Unexpected ')' at position ${firstBad + 1} of RHS`, hint: "Extra closing parenthesis with no matching '('" })
+
+  // Consecutive operators (allow leading unary minus like (-5))
+  if (/([+*/]{2,}|(?<![(\s])-{2,}|\*\*|[+*/]-(?=[0-9a-zA-Z(])-|[+*\/][+*\/])/.test(rhs.replace(/\s+/g, "")))
+    errs.push({ code: "E07", message: "Consecutive operators detected", hint: "Each operator must be surrounded by operands" })
+
+  // Trailing operator
+  if (/[+\-*/]\s*$/.test(rhs))
+    errs.push({ code: "E08", message: "Expression ends with an operator", hint: "The last operator has no right-hand operand" })
+
+  // Operator immediately after '(' (excluding unary -)
+  if (/\(\s*[+*/]/.test(rhs))
+    errs.push({ code: "E09", message: "Operator immediately after '('", hint: "Only a number, variable, or unary '-' may follow '('" })
+
+  // Invalid characters
+  const badChars = [...new Set((rhs.match(/[^a-zA-Z0-9_.+\-*/()\s]/g) || []))]
+  if (badChars.length)
+    errs.push({ code: "E10", message: `Invalid character(s): ${badChars.map(c => `'${c}'`).join(", ")}`, hint: "Allowed: letters, digits, underscores, and + - * / ( )" })
+
+  // Division by zero
+  if (/\/\s*0(?!\d|\.)\b/.test(rhs))
+    errs.push({ code: "E11", message: "Division by zero", hint: "The divisor is 0 — this causes a runtime error" })
+
+  return errs
+}
 const generateTAC = (expr) => {
   const parts = expr.split("=")
   if (parts.length < 2) return []
@@ -451,7 +518,7 @@ export default function App() {
   const [tokens, setTokens] = useState([])
   const [tac, setTac] = useState([])
   const [optimizedCode, setOptimizedCode] = useState("")
-  const [error, setError] = useState("")
+  const [errors, setErrors] = useState([])
   const [tree, setTree] = useState(null)
   const [loading, setLoading] = useState(false)
   const [activePhase, setActivePhase] = useState(null)
@@ -465,8 +532,9 @@ export default function App() {
     setLoading(true)
     setHasRun(false)
     setTimeout(() => {
-      if (!validateSyntax(expression)) {
-        setError("Syntax error: expected form  ‹identifier› = ‹expression›")
+      const errs = validateSyntax(expression)
+      if (errs.length > 0) {
+        setErrors(errs)
         setTokens([])
         setTac([])
         setOptimizedCode("")
@@ -474,7 +542,7 @@ export default function App() {
         setLoading(false)
         return
       }
-      setError("")
+      setErrors([])
       setTokens(lexer(expression))
       setTac(generateTAC(expression))
       setOptimizedCode(constantFolding(expression))
@@ -794,7 +862,7 @@ export default function App() {
                       type="text"
                       placeholder="a = 5 + 3 * 2"
                       value={expression}
-                      onChange={(e) => setExpression(e.target.value)}
+                      onChange={(e) => { setExpression(e.target.value); setErrors([]) }}
                       onKeyDown={handleKeyDown}
                       className="expr-input w-full pl-9 pr-5 py-4 rounded-xl bg-white/[0.04] border border-white/[0.08] text-slate-100 text-sm focus:outline-none focus:border-emerald-400/50 focus:bg-white/[0.06] transition-all duration-200"
                     />
@@ -838,7 +906,7 @@ export default function App() {
                       key={i}
                       whileHover={{ y: -1 }}
                       whileTap={{ scale: 0.97 }}
-                      onClick={() => setExpression(s)}
+                      onClick={() => { setExpression(s); setErrors([]) }}
                       className="font-mono text-xs px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-slate-400 hover:text-slate-200 hover:border-emerald-400/30 transition-all duration-200"
                     >
                       {s}
@@ -856,19 +924,45 @@ export default function App() {
                 </AnimatePresence>
 
                 <AnimatePresence>
-                  {error && (
+                  {errors.length > 0 && (
                     <motion.div
-                      initial={{ opacity: 0, y: -8 }}
+                      initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      className="mt-5 flex items-start gap-3 px-5 py-4 rounded-xl bg-red-500/10 border border-red-500/30"
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.3 }}
+                      className="mt-5 rounded-2xl border border-red-500/25 bg-red-500/[0.06] overflow-hidden"
                     >
-                      <span className="text-red-400 text-lg shrink-0">⊗</span>
-                      <div>
-                        <p className="font-mono text-xs text-red-400 font-semibold tracking-wider uppercase mb-1">
-                          Parse Error
-                        </p>
-                        <p className="font-mono text-sm text-red-300">{error}</p>
+                      {/* Diagnostic header */}
+                      <div className="flex items-center gap-3 px-5 py-3 border-b border-red-500/20 bg-red-500/[0.08]">
+                        <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+                        <span className="font-mono text-xs text-red-400 font-semibold tracking-widest uppercase">
+                          Syntax Diagnostics — {errors.length} error{errors.length > 1 ? "s" : ""} found
+                        </span>
+                      </div>
+                      {/* Error list */}
+                      <div className="divide-y divide-red-500/10">
+                        {errors.map((err, i) => (
+                          <motion.div
+                            key={i}
+                            initial={{ opacity: 0, x: -12 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.07 }}
+                            className="flex items-start gap-4 px-5 py-4"
+                          >
+                            {/* Error code badge */}
+                            <span className="mt-0.5 shrink-0 font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-red-500/20 border border-red-500/30 text-red-400 tracking-widest">
+                              {err.code}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-mono text-sm text-red-200 font-medium leading-snug">
+                                {err.message}
+                              </p>
+                              <p className="font-mono text-xs text-red-400/70 mt-1 leading-relaxed">
+                                ↳ {err.hint}
+                              </p>
+                            </div>
+                          </motion.div>
+                        ))}
                       </div>
                     </motion.div>
                   )}
@@ -938,7 +1032,7 @@ export default function App() {
               </AnimatePresence>
 
               {/* Empty state */}
-              {!hasRun && !loading && !error && (
+              {!hasRun && !loading && errors.length === 0 && (
                 <div className="rounded-2xl border border-dashed border-white/[0.07] py-16 text-center">
                   <p className="font-mono text-xs text-slate-600 tracking-widest uppercase">
                     Enter an expression above and click Run Pipeline
